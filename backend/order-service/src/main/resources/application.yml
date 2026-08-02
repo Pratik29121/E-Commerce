@@ -1,0 +1,32 @@
+server:
+  port: ${PORT:8083}
+
+spring:
+  application:
+    name: order-service
+  datasource:
+    url: jdbc:postgresql://${DB_HOST:localhost}:${DB_PORT:5432}/${DB_NAME:orderdb}${DB_PARAMS:}
+    username: ${DB_USER:postgres}
+    password: ${DB_PASSWORD:postgres}
+  jpa:
+    hibernate:
+      ddl-auto: update
+    show-sql: false
+
+# In phase 1 this is a plain hardcoded URL. Once Eureka + OpenFeign are added (phase 2)
+# this becomes a logical service name resolved via service discovery instead.
+services:
+  product-service:
+    url: ${PRODUCT_SERVICE_URL:http://localhost:8082}
+    connect-timeout-ms: ${PRODUCT_CLIENT_CONNECT_TIMEOUT_MS:10000}
+    read-timeout-ms: ${PRODUCT_CLIENT_READ_TIMEOUT_MS:45000}
+
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health
+
+logging:
+  level:
+    com.ecommerce.order: INFO

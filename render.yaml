@@ -1,0 +1,100 @@
+# Render Blueprint - deploys all 4 backend services in one go.
+# Docs: https://render.com/docs/blueprint-spec
+#
+# Usage: push this repo to GitHub, then in the Render dashboard choose
+# "New > Blueprint" and point it at the repo. Render will read this file
+# and create all 4 services below. Fields marked "sync: false" prompt you
+# to fill in a value in the Render dashboard during setup (used for secrets
+# and for values that depend on your Neon connection details).
+#
+# Postgres is NOT defined here - this project uses Neon (see DEPLOY.md),
+# since Render's free Postgres expires after 30 days and Neon's doesn't.
+
+services:
+  - type: web
+    name: user-service
+    runtime: docker
+    dockerfilePath: ./backend/user-service/Dockerfile
+    dockerContext: ./backend/user-service
+    plan: free
+    healthCheckPath: /actuator/health
+    envVars:
+      - key: DB_HOST
+        sync: false          # e.g. ep-xxxx.us-east-2.aws.neon.tech
+      - key: DB_PORT
+        value: "5432"
+      - key: DB_NAME
+        value: userdb
+      - key: DB_USER
+        sync: false          # your Neon role name
+      - key: DB_PASSWORD
+        sync: false          # your Neon role password
+      - key: DB_PARAMS
+        value: "?sslmode=require"
+      - key: JWT_SECRET
+        generateValue: true  # Render generates a random secret - copy it into
+                              # order-service/product-service if they ever need to verify tokens
+
+  - type: web
+    name: product-service
+    runtime: docker
+    dockerfilePath: ./backend/product-service/Dockerfile
+    dockerContext: ./backend/product-service
+    plan: free
+    healthCheckPath: /actuator/health
+    envVars:
+      - key: DB_HOST
+        sync: false
+      - key: DB_PORT
+        value: "5432"
+      - key: DB_NAME
+        value: productdb
+      - key: DB_USER
+        sync: false
+      - key: DB_PASSWORD
+        sync: false
+      - key: DB_PARAMS
+        value: "?sslmode=require"
+
+  - type: web
+    name: order-service
+    runtime: docker
+    dockerfilePath: ./backend/order-service/Dockerfile
+    dockerContext: ./backend/order-service
+    plan: free
+    healthCheckPath: /actuator/health
+    envVars:
+      - key: DB_HOST
+        sync: false
+      - key: DB_PORT
+        value: "5432"
+      - key: DB_NAME
+        value: orderdb
+      - key: DB_USER
+        sync: false
+      - key: DB_PASSWORD
+        sync: false
+      - key: DB_PARAMS
+        value: "?sslmode=require"
+      - key: PRODUCT_SERVICE_URL
+        sync: false          # fill in once product-service has deployed and you have its URL,
+                              # e.g. https://product-service-xxxx.onrender.com
+      - key: PRODUCT_CLIENT_CONNECT_TIMEOUT_MS
+        value: "10000"
+      - key: PRODUCT_CLIENT_READ_TIMEOUT_MS
+        value: "45000"       # generous on purpose - covers a cold product-service waking up
+
+  - type: web
+    name: api-gateway
+    runtime: docker
+    dockerfilePath: ./backend/api-gateway/Dockerfile
+    dockerContext: ./backend/api-gateway
+    plan: free
+    healthCheckPath: /actuator/health
+    envVars:
+      - key: USER_SERVICE_URL
+        sync: false          # fill in once user-service has deployed
+      - key: PRODUCT_SERVICE_URL
+        sync: false          # fill in once product-service has deployed
+      - key: ORDER_SERVICE_URL
+        sync: false          # fill in once order-service has deployed
