@@ -1,6 +1,6 @@
 # Northline — E-Commerce Platform 
 
-Deployed at : https://product-service-gnwp.onrender.com
+Deployed at : https://e-commerce-kd57zlq4f-pratik29121s-projects.vercel.app/
 
 
 
